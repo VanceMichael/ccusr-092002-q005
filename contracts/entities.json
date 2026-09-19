@@ -1,17 +1,82 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "既有建筑节能改造测量档案",
-  "required_fields": [
-    "building_ref",
-    "meter_ref",
-    "period_start",
-    "period_end",
-    "reading_kwh"
-  ],
   "time_format": "ISO 8601 with offset",
+  "actor_headers": {
+    "X-Actor-Id": "操作者标识,除 /health 外所有接口必填",
+    "X-Actor-Role": "field_team | calibrator | vendor | inspector | owner"
+  },
+  "roles": {
+    "field_team": "现场检测团队:建筑、基线、仪表、读数、室内环境记录",
+    "calibrator": "校准人员:更正或剔除错误仪表读数,原读数保留",
+    "vendor": "供应商:登记设备更换与宣传值;不得改写第三方结论",
+    "inspector": "第三方检测方:审核测量窗口、定义口径、发布报告",
+    "owner": "业主:只读查询报告与档案"
+  },
+  "entities": {
+    "building": {
+      "required_fields": ["building_ref", "name"],
+      "notes": "building_ref 全局唯一"
+    },
+    "baseline": {
+      "required_fields": ["period_start", "period_end"],
+      "optional_fields": ["occupancy_ratio", "heating_degree_days", "note"],
+      "notes": "改造前使用条件,与能耗读数分开保存"
+    },
+    "meter": {
+      "required_fields": ["meter_ref", "kind"],
+      "enums": {"kind": ["electricity", "heat", "gas", "water"]},
+      "notes": "同一建筑内 meter_ref 唯一"
+    },
+    "reading": {
+      "required_fields": ["meter_ref", "period_start", "period_end", "reading_kwh"],
+      "notes": "只追加;数值修正通过 correction 完成,原读数永不改写"
+    },
+    "correction": {
+      "required_fields": ["action", "reason"],
+      "enums": {"action": ["adjust", "exclude"]},
+      "notes": "adjust 必须带 corrected_kwh;生效值取最新一条更正"
+    },
+    "equipment_replacement": {
+      "required_fields": ["equipment_kind", "installed_model", "replaced_at"]
+    },
+    "vendor_claim": {
+      "required_fields": ["claim_kind", "claim_value", "unit"],
+      "notes": "展会/样本宣传值,与现场实测读数分开保存,永不进入节能计算"
+    },
+    "environment_record": {
+      "required_fields": ["period_start", "period_end"],
+      "optional_fields": ["indoor_temp_c", "indoor_humidity_pct", "occupancy_ratio", "heating_degree_days"]
+    },
+    "measurement_window": {
+      "required_fields": ["phase", "period_start", "period_end"],
+      "enums": {"phase": ["baseline", "reporting"], "status": ["open", "validated", "invalid"]},
+      "notes": "仅 validated 窗口可用于发布;被已发布报告引用的窗口不得变更"
+    },
+    "caliber": {
+      "required_fields": ["code", "meter_kinds", "min_coverage_ratio"],
+      "fields": ["normalize_occupancy", "normalize_heating", "description"],
+      "notes": "创建后不可修改;口径变化新增版本,version 自动递增"
+    },
+    "report": {
+      "required_fields": ["caliber_id", "baseline_window_id", "reporting_window_id"],
+      "optional_fields": ["supersedes_id"],
+      "notes": "发布后冻结 result(含时段、剔除读数、更正记录、归一化系数);更正结论只能新建报告并注明 supersedes_id"
+    }
+  },
+  "invariants": [
+    "原读数保留:读数行不允许修改或删除,更正以追加记录形式存在",
+    "指标只能在 validated 测量窗口与 active 口径下发布",
+    "发布时读数覆盖率不得低于口径的 min_coverage_ratio",
+    "供应商不得创建/修改窗口、口径、报告与读数更正",
+    "已发布报告、其引用窗口与口径均锁定,不得变更",
+    "业主可见:计算使用的时段、被剔除读数及原因、应用的更正、口径变化造成的差额"
+  ],
   "sample": {
     "building_ref": "BUILDING-DEMO",
     "meter_ref": "METER-A",
+    "period_start": "2026-01-01T00:00:00+08:00",
+    "period_end": "2026-02-01T00:00:00+08:00",
     "reading_kwh": "230.5"
   }
 }

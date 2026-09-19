@@ -1,5 +1,69 @@
 {
-  "building_ref": "BUILDING-DEMO",
-  "meter_ref": "METER-A",
-  "reading_kwh": "230.5"
+  "description": "不含真实身份的交换示例:一栋改造建筑从建档到发布节能结论的完整档案片段",
+  "actor_examples": [
+    {"X-Actor-Id": "ft-demo", "X-Actor-Role": "field_team"},
+    {"X-Actor-Id": "cal-demo", "X-Actor-Role": "calibrator"},
+    {"X-Actor-Id": "vendor-demo", "X-Actor-Role": "vendor"},
+    {"X-Actor-Id": "insp-demo", "X-Actor-Role": "inspector"},
+    {"X-Actor-Id": "owner-demo", "X-Actor-Role": "owner"}
+  ],
+  "building": {
+    "building_ref": "BUILDING-DEMO",
+    "name": "示例住宅楼",
+    "address": "高碑店市(示例)",
+    "floor_area_m2": 3200
+  },
+  "baseline": {
+    "period_start": "2025-01-01T00:00:00+08:00",
+    "period_end": "2025-02-01T00:00:00+08:00",
+    "occupancy_ratio": 0.8,
+    "heating_degree_days": 600,
+    "note": "改造前采暖季基线"
+  },
+  "meter": {"meter_ref": "METER-A", "kind": "heat"},
+  "readings": [
+    {"meter_ref": "METER-A", "period_start": "2025-01-01T00:00:00+08:00", "period_end": "2025-01-16T00:00:00+08:00", "reading_kwh": "500"},
+    {"meter_ref": "METER-A", "period_start": "2025-01-16T00:00:00+08:00", "period_end": "2025-02-01T00:00:00+08:00", "reading_kwh": "520"},
+    {"meter_ref": "METER-A", "period_start": "2026-01-01T00:00:00+08:00", "period_end": "2026-02-01T00:00:00+08:00", "reading_kwh": "700"}
+  ],
+  "correction_example": {
+    "reading_id": 1,
+    "action": "adjust",
+    "corrected_kwh": 480,
+    "reason": "表计倍率错误,原读数 500 保留"
+  },
+  "equipment_replacement": {
+    "equipment_kind": "heat_pump",
+    "removed_model": "OLD-BOILER",
+    "installed_model": "HP-DEMO",
+    "vendor_ref": "VENDOR-DEMO",
+    "replaced_at": "2025-06-15T00:00:00+08:00"
+  },
+  "vendor_claim": {
+    "claim_kind": "savings_pct",
+    "claim_value": 55,
+    "unit": "percent",
+    "note": "展会宣传值,与现场实测读数分开保存,不进入节能计算"
+  },
+  "environment_records": [
+    {"period_start": "2025-01-01T00:00:00+08:00", "period_end": "2025-02-01T00:00:00+08:00", "indoor_temp_c": 21.5, "occupancy_ratio": 0.8, "heating_degree_days": 600},
+    {"period_start": "2026-01-01T00:00:00+08:00", "period_end": "2026-02-01T00:00:00+08:00", "indoor_temp_c": 21.2, "occupancy_ratio": 0.9, "heating_degree_days": 700}
+  ],
+  "measurement_windows": [
+    {"phase": "baseline", "period_start": "2025-01-01T00:00:00+08:00", "period_end": "2025-02-01T00:00:00+08:00"},
+    {"phase": "reporting", "period_start": "2026-01-01T00:00:00+08:00", "period_end": "2026-02-01T00:00:00+08:00"}
+  ],
+  "caliber": {
+    "code": "GB-SAVINGS",
+    "meter_kinds": ["heat"],
+    "normalize_occupancy": true,
+    "normalize_heating": true,
+    "min_coverage_ratio": 0.9,
+    "description": "采暖能耗节能量:占用率与采暖度日归一化"
+  },
+  "report": {
+    "caliber_id": 1,
+    "baseline_window_id": 1,
+    "reporting_window_id": 2
+  }
 }

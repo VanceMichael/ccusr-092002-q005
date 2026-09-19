@@ -1,9 +1,7 @@
-
 .PHONY: migrate test run
-DATABASE_PATH ?= data/app.sqlite3
+DATABASE_PATH ?= data/app.json
 migrate:
-	mkdir -p $$(dirname "$(DATABASE_PATH)")
-	sqlite3 "$(DATABASE_PATH)" < migrations/001_bootstrap.sql
+	DATABASE_PATH="$(DATABASE_PATH)" go run ./cmd/server -migrate-only
 test:
 	go test ./...
 run:
