@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "domain": "既有建筑节能改造测量档案",
+  "required_fields": [
+    "building_ref",
+    "meter_ref",
+    "period_start",
+    "period_end",
+    "reading_kwh"
+  ],
+  "time_format": "ISO 8601 with offset",
+  "sample": {
+    "building_ref": "BUILDING-DEMO",
+    "meter_ref": "METER-A",
+    "reading_kwh": "230.5"
+  }
+}
