@@ -1,14 +1,165 @@
 {
-  "schema_version": "1",
+  "schema_version": "2",
   "domain": "既有建筑节能改造测量档案",
-  "required_fields": [
-    "building_ref",
-    "meter_ref",
-    "period_start",
-    "period_end",
-    "reading_kwh"
-  ],
   "time_format": "ISO 8601 with offset",
+  "numeric_format": "十进制字符串（避免浮点传输歧义），如 \"230.5\"",
+  "id_conventions": {
+    "building": "BLD-n",
+    "project": "PRJ-n",
+    "equipment": "EQP-n",
+    "meter": "MTR-n",
+    "reading": "RDG-n",
+    "correction": "COR-n",
+    "indoor": "IND-n",
+    "window": "WIN-n",
+    "exclusion": "EXC-n",
+    "methodology": "MET-n",
+    "report": "RPT-n",
+    "conclusion": "CON-n"
+  },
+  "roles": {
+    "field": "现场检测团队：建筑/项目/设备/仪表/读数/室内环境/窗口/剔除/口径草稿/报告发布",
+    "calibration": "校准人员：仅对错误读数追加更正；原读数保留",
+    "third_party": "第三方机构：对已发布报告追加结论；结论不可改不可删",
+    "owner": "业主：只读，可查询报告（时段/读数/剔除/口径差额/结论）与链校验，不能写入"
+  },
+  "supplier_policy": "供应商不是系统角色、不持有令牌；其展会/手册数值只能存入 marketing_claim* 字段，绝不进入节能计算，也不能改写第三方结论",
+  "immutability": [
+    "meter_readings.original_value 永不更新或删除",
+    "reading_corrections 只追加，一条读数至多一条更正",
+    "third_party_conclusions 只追加",
+    "reports 发布后不可变；口径/数据变化发布新版本报告并单列口径差额"
+  ],
+  "publication_gate": {
+    "rule": "指标只能在 finalized 测量窗口 + locked 口径版本下发布",
+    "requirements": [
+      "baseline 与 post 窗口均 finalized",
+      "两窗口绑定同一 locked 口径",
+      "口径纳入的每块仪表在两窗口内均有有效读数",
+      "被剔除读数带原因且可在报告中追溯"
+    ]
+  },
+  "heating_occupancy": {
+    "heating_season_window_field": "0/1，窗口整体采暖季属性",
+    "heating_normalization": "none | degree_day（按 HDD 度日修正）",
+    "occupancy_normalization": "none | fixed | actual（室内环境记录提供 occupancy_rate 0~1）",
+    "note": "跨采暖季或占用率差异未按口径修正时，发布被阻断"
+  },
+  "entities": {
+    "building": {
+      "required": ["building_ref", "name", "building_type", "floor_area_m2"],
+      "fields": {
+        "building_ref": "业主侧建筑编号（提交方识别符，非系统主键）",
+        "name": "建筑名称",
+        "city": "默认 高碑店",
+        "building_type": "建筑类型",
+        "floor_area_m2": "建筑面积（m² 字符串）"
+      }
+    },
+    "project": {
+      "required": ["building_id", "name", "kind"],
+      "fields": {
+        "kind": "new_build | retrofit",
+        "work_start": "ISO 8601，可空",
+        "work_end": "ISO 8601，可空"
+      }
+    },
+    "equipment_replacement": {
+      "required": ["project_id", "category", "replaced_on"],
+      "fields": {
+        "old_description": "被更换设备",
+        "new_description": "新设备",
+        "supplier_name": "供应商名称",
+        "supplier_model": "型号",
+        "rated_value": "铭牌/实测参数（可选，与宣传值分开）",
+        "rated_unit": "铭牌参数单位",
+        "marketing_claim": "展会/手册宣传数值（参考，不入算）",
+        "marketing_claim_unit": "宣传值单位",
+        "claim_source": "宣传值来源（展会/手册/网址）"
+      }
+    },
+    "meter": {
+      "required": ["meter_ref", "building_id", "meter_type", "installed_on"],
+      "fields": {
+        "meter_ref": "仪表编号（提交方识别符）",
+        "meter_type": "heat | electric | gas | water",
+        "unit": "默认 kWh",
+        "status": "active | retired"
+      }
+    },
+    "meter_reading": {
+      "required": ["meter_id", "period_start", "period_end", "value"],
+      "fields": {
+        "value": "原始读数（不可变），对应迁移列 original_value",
+        "quality": "good | suspect",
+        "source_ref": "采集批次/手持终端编号",
+        "record_seq": "系统回填的哈希链序号；窗口以此为锚冻结读数集合"
+      }
+    },
+    "reading_correction": {
+      "required": ["reading_id", "corrected_value", "reason"],
+      "fields": {
+        "corrected_value": "更正后读数；计算用此值",
+        "reason": "更正原因",
+        "calibration_ref": "校准证书编号"
+      }
+    },
+    "indoor_environment": {
+      "required": ["building_id", "ts", "heating_season"],
+      "fields": {
+        "temp_c": "室温（℃）",
+        "humidity_pct": "相对湿度（%）",
+        "co2_ppm": "CO2（ppm）",
+        "occupancy_rate": "占用率 0~1",
+        "heating_season": "0/1"
+      }
+    },
+    "measurement_window": {
+      "required": ["project_id", "methodology_id", "label", "kind", "period_start", "period_end", "heating_season"],
+      "fields": {
+        "kind": "baseline | post",
+        "methodology_id": "绑定的口径版本",
+        "hdd": "采暖度日（degree_day 修正用）",
+        "occupancy_min": "窗口占用率下限（actual 修正有效性校验）",
+        "occupancy_max": "窗口占用率上限",
+        "status": "draft | finalized",
+        "finalize_seq": "终结事件链序号；终结后补录、时段虽重叠的读数不进入窗口，报告会单列 recorded_after_finalize_readings"
+      }
+    },
+    "window_exclusion": {
+      "required": ["window_id", "reading_id", "reason"],
+      "fields": {"reason": "剔除原因，报告会逐条列出"}
+    },
+    "methodology_version": {
+      "required": ["project_id", "included_meter_ids"],
+      "fields": {
+        "included_meter_ids": "纳入计算的仪表 ID 数组",
+        "heating_normalization": "none | degree_day",
+        "occupancy_normalization": "none | fixed | actual",
+        "fixed_occupancy": "fixed 修正的基准占用率",
+        "boundary_note": "计量边界说明",
+        "change_note": "相对上一版本的变更说明",
+        "status": "draft | locked | superseded"
+      }
+    },
+    "report": {
+      "required": ["project_id", "baseline_window_id", "post_window_id", "methodology_id"],
+      "output_fields": {
+        "baseline_raw_kwh": "基线原始有效合计",
+        "post_raw_kwh": "改造后原始有效合计",
+        "baseline_adjusted_kwh": "按口径修正后的基线值",
+        "post_adjusted_kwh": "按口径修正后的改造后值",
+        "savings_kwh": "节能量",
+        "savings_pct": "节能率",
+        "methodology_change_delta_kwh": "相较上一版报告的口径变化差额（无则 null）",
+        "snapshot": "窗口/读数/剔除/口径的完整固化快照，供业主追溯"
+      }
+    },
+    "third_party_conclusion": {
+      "required": ["report_id", "organization", "verdict", "finding"],
+      "fields": {"verdict": "pass | conditional | fail"}
+    }
+  },
   "sample": {
     "building_ref": "BUILDING-DEMO",
     "meter_ref": "METER-A",

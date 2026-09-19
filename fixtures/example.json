@@ -1,5 +1,49 @@
 {
-  "building_ref": "BUILDING-DEMO",
-  "meter_ref": "METER-A",
-  "reading_kwh": "230.5"
+  "_comment": "字段交换示例（不含真实个人资料）。building_ref/meter_ref 为提交方识别符；宣传值与实测值分栏。",
+  "building": {
+    "building_ref": "BUILDING-DEMO",
+    "name": "高碑店示例小区 3 号楼",
+    "building_type": "住宅",
+    "floor_area_m2": "4200.0"
+  },
+  "meter_reading": {
+    "building_ref": "BUILDING-DEMO",
+    "meter_ref": "METER-A",
+    "period_start": "2025-11-15T00:00:00+08:00",
+    "period_end": "2025-11-30T00:00:00+08:00",
+    "reading_kwh": "230.5",
+    "quality": "good"
+  },
+  "reading_correction": {
+    "meter_ref": "METER-A",
+    "period_start": "2025-11-15T00:00:00+08:00",
+    "original_reading_kwh": "2305",
+    "corrected_reading_kwh": "230.5",
+    "reason": "倍率设置错误（×10）",
+    "calibration_ref": "CAL-2025-0087"
+  },
+  "equipment": {
+    "category": "空气源热泵",
+    "supplier_name": "示例供应商",
+    "supplier_model": "DEMO-6P",
+    "rated_value": "COP 2.8（第三方工况实测）",
+    "marketing_claim": "COP 5.2",
+    "claim_source": "2026 展会展板",
+    "_claim_policy": "marketing_claim 仅供参考，不进入节能计算"
+  },
+  "window_exclusion": {
+    "window_ref": "WIN-DEMO-POST",
+    "meter_ref": "METER-A",
+    "period_start": "2025-12-01T00:00:00+08:00",
+    "reason": "住户装修停用 5 日，占用率为 0"
+  },
+  "report_query": {
+    "project_ref": "PRJ-DEMO",
+    "shows": [
+      "baseline/post 使用的测量窗口时段",
+      "纳入的仪表与读数清单（含原读数与更正值）",
+      "被剔除读数及原因",
+      "口径版本及口径变化造成的差额 methodology_change_delta_kwh"
+    ]
+  }
 }
